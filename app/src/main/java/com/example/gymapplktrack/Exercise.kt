@@ -1,3 +1,9 @@
 package com.example.gymapplktrack
 
-data class Exercise(val name: String, val record: String)
+import android.net.Uri
+
+data class Exercise(
+    val name: String,
+    val record: String,
+    val imageUri: Uri? = null
+)
