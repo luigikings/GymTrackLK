@@ -15,6 +15,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material.icons.filled.FitnessCenter
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.List
 import com.example.gymapplktrack.ui.theme.GymTrackTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -32,7 +34,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            GymTrackTheme {
+            GymTrackTheme(darkTheme = true) {
                 GymTrackApp()
             }
         }
@@ -50,19 +52,34 @@ fun GymTrackApp() {
                     selected = selectedScreen == Screen.Exercises,
                     onClick = { selectedScreen = Screen.Exercises },
                     label = { Text(stringResource(id = R.string.exercises)) },
-                    icon = {}
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Default.FitnessCenter,
+                            contentDescription = null
+                        )
+                    }
                 )
                 NavigationBarItem(
                     selected = selectedScreen == Screen.Routines,
                     onClick = { selectedScreen = Screen.Routines },
                     label = { Text(stringResource(id = R.string.routines)) },
-                    icon = {}
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Default.List,
+                            contentDescription = null
+                        )
+                    }
                 )
                 NavigationBarItem(
                     selected = selectedScreen == Screen.Profile,
                     onClick = { selectedScreen = Screen.Profile },
                     label = { Text(stringResource(id = R.string.profile)) },
-                    icon = {}
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = null
+                        )
+                    }
                 )
             }
         }
@@ -89,19 +106,7 @@ fun ExercisesScreen() {
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
-            horizontalArrangement = Arrangement.End
-        ) {
-            IconButton(onClick = { gridMode = !gridMode }) {
-                val icon: ImageVector = if (gridMode) Icons.Default.ViewList else Icons.Default.GridView
-                Icon(imageVector = icon, contentDescription = null)
-            }
-        }
-
+    Box(modifier = Modifier.fillMaxSize()) {
         if (gridMode) {
             LazyVerticalGrid(columns = GridCells.Fixed(2), modifier = Modifier.fillMaxSize()) {
                 items(exercises) { exercise ->
@@ -114,6 +119,16 @@ fun ExercisesScreen() {
                     ExerciseItem(exercise)
                 }
             }
+        }
+
+        FloatingActionButton(
+            onClick = { gridMode = !gridMode },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp)
+        ) {
+            val icon: ImageVector = if (gridMode) Icons.Default.ViewList else Icons.Default.GridView
+            Icon(imageVector = icon, contentDescription = null)
         }
     }
 }
