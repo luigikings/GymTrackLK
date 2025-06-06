@@ -1,6 +1,8 @@
 package com.example.gymapplktrack
 
 import android.os.Bundle
+import android.graphics.Color
+import androidx.core.view.WindowCompat
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
@@ -29,10 +31,13 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.statusBarsPadding
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        window.statusBarColor = Color.BLACK
         setContent {
             GymTrackTheme(darkTheme = true) {
                 GymTrackApp()
@@ -84,7 +89,13 @@ fun GymTrackApp() {
             }
         }
     ) { padding ->
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .statusBarsPadding(),
+            contentAlignment = Alignment.Center
+        ) {
             when (selectedScreen) {
                 Screen.Exercises -> ExercisesScreen()
                 Screen.Routines -> RoutinesScreen()
