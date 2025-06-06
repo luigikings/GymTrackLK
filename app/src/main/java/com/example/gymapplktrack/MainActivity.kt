@@ -36,22 +36,24 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.statusBarsPadding
 import coil.compose.AsyncImage
 import android.net.Uri
+import com.example.gymapplktrack.ExerciseRepository
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
         window.statusBarColor = Color.BLACK
+        val repository = ExerciseRepository(this)
         setContent {
             GymTrackTheme(darkTheme = true) {
-                GymTrackApp()
+                GymTrackApp(repository)
             }
         }
     }
 }
 
 @Composable
-fun GymTrackApp() {
+fun GymTrackApp(repository: ExerciseRepository) {
     var selectedScreen by remember { mutableStateOf(Screen.Exercises) }
 
     Scaffold(
@@ -101,7 +103,7 @@ fun GymTrackApp() {
             contentAlignment = Alignment.Center
         ) {
             when (selectedScreen) {
-                Screen.Exercises -> ExercisesScreen()
+                Screen.Exercises -> ExercisesScreen(repository)
                 Screen.Routines -> RoutinesScreen()
                 Screen.Profile -> ProfileScreen()
             }
@@ -112,13 +114,18 @@ fun GymTrackApp() {
 enum class Screen { Exercises, Routines, Profile }
 
 @Composable
-fun ExercisesScreen() {
+fun ExercisesScreen(repository: ExerciseRepository) {
     var gridMode by remember { mutableStateOf(false) }
     var showDialog by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     val exercises = remember {
         mutableStateListOf<Exercise>().apply {
-            repeat(5) { add(Exercise(name = "Exercise ${it + 1}", record = "X")) }
+            val saved = repository.loadExercises()
+            if (saved.isNotEmpty()) {
+                addAll(saved)
+            } else {
+                repeat(5) { add(Exercise(name = "Exercise ${it + 1}", record = "X")) }
+            }
         }
     }
 
@@ -175,6 +182,7 @@ fun ExercisesScreen() {
             onDismiss = { showDialog = false },
             onAdd = { name, uri ->
                 exercises.add(Exercise(name = name, record = "X", imageUri = uri))
+                repository.saveExercises(exercises)
                 showDialog = false
             }
         )
@@ -284,6 +292,16 @@ fun AddExerciseDialog(onDismiss: () -> Unit, onAdd: (String, Uri?) -> Unit) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(onClick = { launcher.launch("image/*") }) {
                     Text(text = stringResource(id = R.string.select_photo))
+                }
+                if (imageUri != null) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    AsyncImage(
+                        model = imageUri,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(150.dp)
+                    )
                 }
             }
         }
