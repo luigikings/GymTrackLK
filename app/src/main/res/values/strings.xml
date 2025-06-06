@@ -9,4 +9,6 @@
     <string name="add">Agregar</string>
     <string name="cancel">Cancelar</string>
     <string name="select_photo">Seleccionar foto</string>
+    <string name="delete">Eliminar</string>
+    <string name="delete_exercises_question">\u00BFDeseas eliminar %1$d ejercicios?</string>
 </resources>
