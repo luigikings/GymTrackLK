@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Delete
 import com.example.gymapplktrack.ui.theme.GymTrackTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -34,9 +35,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.combinedClickable
 import coil.compose.AsyncImage
 import android.net.Uri
+import android.content.Intent
 import com.example.gymapplktrack.ExerciseRepository
+import androidx.compose.ui.platform.LocalContext
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -118,6 +122,9 @@ fun ExercisesScreen(repository: ExerciseRepository) {
     var gridMode by remember { mutableStateOf(false) }
     var showDialog by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var selectionMode by remember { mutableStateOf(false) }
+    val selectedExercises = remember { mutableStateListOf<Exercise>() }
     val exercises = remember {
         mutableStateListOf<Exercise>().apply {
             val saved = repository.loadExercises()
@@ -145,13 +152,40 @@ fun ExercisesScreen(repository: ExerciseRepository) {
             if (gridMode) {
                 LazyVerticalGrid(columns = GridCells.Fixed(2), modifier = Modifier.fillMaxSize()) {
                     items(filtered) { exercise ->
-                        ExerciseItem(exercise, grid = true)
+                        ExerciseItem(
+                            exercise,
+                            grid = true,
+                            selected = exercise in selectedExercises,
+                            onClick = {
+                                if (selectionMode) {
+                                    if (exercise in selectedExercises) selectedExercises.remove(exercise) else selectedExercises.add(exercise)
+                                    selectionMode = selectedExercises.isNotEmpty()
+                                }
+                            },
+                            onLongClick = {
+                                if (exercise in selectedExercises) selectedExercises.remove(exercise) else selectedExercises.add(exercise)
+                                selectionMode = selectedExercises.isNotEmpty()
+                            }
+                        )
                     }
                 }
             } else {
                 LazyColumn(modifier = Modifier.fillMaxSize()) {
                     items(filtered) { exercise ->
-                        ExerciseItem(exercise)
+                        ExerciseItem(
+                            exercise,
+                            selected = exercise in selectedExercises,
+                            onClick = {
+                                if (selectionMode) {
+                                    if (exercise in selectedExercises) selectedExercises.remove(exercise) else selectedExercises.add(exercise)
+                                    selectionMode = selectedExercises.isNotEmpty()
+                                }
+                            },
+                            onLongClick = {
+                                if (exercise in selectedExercises) selectedExercises.remove(exercise) else selectedExercises.add(exercise)
+                                selectionMode = selectedExercises.isNotEmpty()
+                            }
+                        )
                     }
                 }
             }
@@ -164,6 +198,18 @@ fun ExercisesScreen(repository: ExerciseRepository) {
             ) {
                 val icon: ImageVector = if (gridMode) Icons.Default.ViewList else Icons.Default.GridView
                 Icon(imageVector = icon, contentDescription = null)
+            }
+
+            if (selectionMode) {
+                FloatingActionButton(
+                    onClick = { showDeleteDialog = true },
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(16.dp),
+                    containerColor = MaterialTheme.colorScheme.error
+                ) {
+                    Icon(imageVector = Icons.Default.Delete, contentDescription = null)
+                }
             }
         }
 
@@ -187,6 +233,31 @@ fun ExercisesScreen(repository: ExerciseRepository) {
             }
         )
     }
+
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    exercises.removeAll(selectedExercises)
+                    repository.saveExercises(exercises)
+                    selectedExercises.clear()
+                    selectionMode = false
+                    showDeleteDialog = false
+                }) {
+                    Text(text = stringResource(id = R.string.delete))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text(text = stringResource(id = R.string.cancel))
+                }
+            },
+            text = {
+                Text(text = stringResource(id = R.string.delete_exercises_question, selectedExercises.size))
+            }
+        )
+    }
 }
 
 @Composable
@@ -200,7 +271,13 @@ fun ProfileScreen() {
 }
 
 @Composable
-fun ExerciseItem(exercise: Exercise, grid: Boolean = false) {
+fun ExerciseItem(
+    exercise: Exercise,
+    grid: Boolean = false,
+    selected: Boolean = false,
+    onClick: () -> Unit = {},
+    onLongClick: () -> Unit = {}
+) {
     val modifier = if (grid) {
         Modifier
             .padding(8.dp)
@@ -210,11 +287,13 @@ fun ExerciseItem(exercise: Exercise, grid: Boolean = false) {
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
     }
+    val contentModifier = modifier.combinedClickable(onClick = onClick, onLongClick = onLongClick)
     if (grid) {
-        Column(
-            modifier = modifier,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
+        Box(modifier = contentModifier) {
+            Column(
+                modifier = Modifier.align(Alignment.Center),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
             if (exercise.imageUri != null) {
                 AsyncImage(
                     model = exercise.imageUri,
@@ -231,12 +310,24 @@ fun ExerciseItem(exercise: Exercise, grid: Boolean = false) {
             Spacer(modifier = Modifier.height(8.dp))
             Text(text = exercise.name, fontWeight = FontWeight.Bold)
             Text(text = "Record: ${exercise.record}")
+            }
+            if (selected) {
+                Box(
+                    modifier = Modifier
+                        .size(16.dp)
+                        .background(MaterialTheme.colorScheme.primary)
+                        .align(Alignment.TopEnd)
+                )
+            }
         }
     } else {
-        Row(
-            modifier = modifier,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Box(modifier = contentModifier) {
+            Row(
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .padding(end = if (selected) 16.dp else 0.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
             if (exercise.imageUri != null) {
                 AsyncImage(
                     model = exercise.imageUri,
@@ -255,6 +346,15 @@ fun ExerciseItem(exercise: Exercise, grid: Boolean = false) {
                 Text(text = exercise.name, fontWeight = FontWeight.Bold)
                 Text(text = "Record: ${exercise.record}")
             }
+            }
+            if (selected) {
+                Box(
+                    modifier = Modifier
+                        .size(16.dp)
+                        .background(MaterialTheme.colorScheme.primary)
+                        .align(Alignment.TopEnd)
+                )
+            }
         }
     }
 }
@@ -263,8 +363,17 @@ fun ExerciseItem(exercise: Exercise, grid: Boolean = false) {
 fun AddExerciseDialog(onDismiss: () -> Unit, onAdd: (String, Uri?) -> Unit) {
     var name by remember { mutableStateOf("") }
     var imageUri by remember { mutableStateOf<Uri?>(null) }
-
-    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) {
+    val context = LocalContext.current
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) {
+        if (it != null) {
+            try {
+                context.contentResolver.takePersistableUriPermission(
+                    it,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            } catch (_: SecurityException) {
+            }
+        }
         imageUri = it
     }
 
@@ -290,7 +399,7 @@ fun AddExerciseDialog(onDismiss: () -> Unit, onAdd: (String, Uri?) -> Unit) {
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                Button(onClick = { launcher.launch("image/*") }) {
+                Button(onClick = { launcher.launch(arrayOf("image/*")) }) {
                     Text(text = stringResource(id = R.string.select_photo))
                 }
                 if (imageUri != null) {
