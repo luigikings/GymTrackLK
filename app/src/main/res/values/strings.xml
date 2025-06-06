@@ -3,4 +3,10 @@
     <string name="exercises">Lista de ejercicios</string>
     <string name="routines">Rutinas</string>
     <string name="profile">Perfil</string>
+    <string name="add_exercise">+ Agregar Ejercicio</string>
+    <string name="search_exercise">Buscar ejercicio</string>
+    <string name="exercise_name">Nombre del Ejercicio</string>
+    <string name="add">Agregar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="select_photo">Seleccionar foto</string>
 </resources>

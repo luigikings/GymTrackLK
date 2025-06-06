@@ -5,7 +5,8 @@ import android.graphics.Color
 import androidx.core.view.WindowCompat
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.Image
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -23,6 +24,7 @@ import com.example.gymapplktrack.ui.theme.GymTrackTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -32,6 +34,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.statusBarsPadding
+import coil.compose.AsyncImage
+import android.net.Uri
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -110,37 +114,70 @@ enum class Screen { Exercises, Routines, Profile }
 @Composable
 fun ExercisesScreen() {
     var gridMode by remember { mutableStateOf(false) }
-
+    var showDialog by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
     val exercises = remember {
-        List(100) { index ->
-            Exercise(name = "Exercise ${index + 1}", record = "X")
+        mutableStateListOf<Exercise>().apply {
+            repeat(5) { add(Exercise(name = "Exercise ${it + 1}", record = "X")) }
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        if (gridMode) {
-            LazyVerticalGrid(columns = GridCells.Fixed(2), modifier = Modifier.fillMaxSize()) {
-                items(exercises) { exercise ->
-                    ExerciseItem(exercise, grid = true)
+    Column(modifier = Modifier.fillMaxSize()) {
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            placeholder = { Text(stringResource(id = R.string.search_exercise)) }
+        )
+
+        val filtered = exercises.filter { it.name.contains(searchQuery, ignoreCase = true) }
+
+        Box(modifier = Modifier.weight(1f)) {
+            if (gridMode) {
+                LazyVerticalGrid(columns = GridCells.Fixed(2), modifier = Modifier.fillMaxSize()) {
+                    items(filtered) { exercise ->
+                        ExerciseItem(exercise, grid = true)
+                    }
+                }
+            } else {
+                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    items(filtered) { exercise ->
+                        ExerciseItem(exercise)
+                    }
                 }
             }
-        } else {
-            LazyColumn(modifier = Modifier.fillMaxSize()) {
-                items(exercises) { exercise ->
-                    ExerciseItem(exercise)
-                }
+
+            FloatingActionButton(
+                onClick = { gridMode = !gridMode },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
+            ) {
+                val icon: ImageVector = if (gridMode) Icons.Default.ViewList else Icons.Default.GridView
+                Icon(imageVector = icon, contentDescription = null)
             }
         }
 
-        FloatingActionButton(
-            onClick = { gridMode = !gridMode },
+        Button(
+            onClick = { showDialog = true },
             modifier = Modifier
-                .align(Alignment.BottomEnd)
+                .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            val icon: ImageVector = if (gridMode) Icons.Default.ViewList else Icons.Default.GridView
-            Icon(imageVector = icon, contentDescription = null)
+            Text(text = stringResource(id = R.string.add_exercise))
         }
+    }
+
+    if (showDialog) {
+        AddExerciseDialog(
+            onDismiss = { showDialog = false },
+            onAdd = { name, uri ->
+                exercises.add(Exercise(name = name, record = "X", imageUri = uri))
+                showDialog = false
+            }
+        )
     }
 }
 
@@ -170,11 +207,19 @@ fun ExerciseItem(exercise: Exercise, grid: Boolean = false) {
             modifier = modifier,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Icon(
-                imageVector = Icons.Default.FitnessCenter,
-                contentDescription = null,
-                modifier = Modifier.size(80.dp)
-            )
+            if (exercise.imageUri != null) {
+                AsyncImage(
+                    model = exercise.imageUri,
+                    contentDescription = null,
+                    modifier = Modifier.size(80.dp)
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Default.FitnessCenter,
+                    contentDescription = null,
+                    modifier = Modifier.size(80.dp)
+                )
+            }
             Spacer(modifier = Modifier.height(8.dp))
             Text(text = exercise.name, fontWeight = FontWeight.Bold)
             Text(text = "Record: ${exercise.record}")
@@ -184,11 +229,19 @@ fun ExerciseItem(exercise: Exercise, grid: Boolean = false) {
             modifier = modifier,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = Icons.Default.FitnessCenter,
-                contentDescription = null,
-                modifier = Modifier.size(40.dp)
-            )
+            if (exercise.imageUri != null) {
+                AsyncImage(
+                    model = exercise.imageUri,
+                    contentDescription = null,
+                    modifier = Modifier.size(40.dp)
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Default.FitnessCenter,
+                    contentDescription = null,
+                    modifier = Modifier.size(40.dp)
+                )
+            }
             Spacer(modifier = Modifier.width(8.dp))
             Column {
                 Text(text = exercise.name, fontWeight = FontWeight.Bold)
@@ -196,4 +249,43 @@ fun ExerciseItem(exercise: Exercise, grid: Boolean = false) {
             }
         }
     }
+}
+
+@Composable
+fun AddExerciseDialog(onDismiss: () -> Unit, onAdd: (String, Uri?) -> Unit) {
+    var name by remember { mutableStateOf("") }
+    var imageUri by remember { mutableStateOf<Uri?>(null) }
+
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) {
+        imageUri = it
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = { if (name.isNotBlank()) onAdd(name, imageUri) }) {
+                Text(text = stringResource(id = R.string.add))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = stringResource(id = R.string.cancel))
+            }
+        },
+        title = { Text(text = stringResource(id = R.string.exercise_name)) },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text(stringResource(id = R.string.exercise_name)) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(onClick = { launcher.launch("image/*") }) {
+                    Text(text = stringResource(id = R.string.select_photo))
+                }
+            }
+        }
+    )
 }
