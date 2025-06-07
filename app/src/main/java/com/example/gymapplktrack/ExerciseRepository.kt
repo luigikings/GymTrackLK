@@ -10,8 +10,8 @@ class ExerciseRepository(context: Context) {
     private val gson = Gson()
 
     fun loadExercises(): MutableList<Exercise> {
-        val json = prefs.getString("list", null)
-        return if (json != null) {
+        val json = prefs.getString("list", null) ?: return mutableListOf()
+        return try {
             val type = object : TypeToken<List<ExerciseDto>>() {}.type
             val dtos: List<ExerciseDto> = gson.fromJson(json, type)
             dtos.map { dto ->
@@ -21,7 +21,7 @@ class ExerciseRepository(context: Context) {
                     dto.imageUri?.let { uri -> Uri.parse(uri) }
                 )
             }.toMutableList()
-        } else {
+        } catch (_: Exception) {
             mutableListOf()
         }
     }
