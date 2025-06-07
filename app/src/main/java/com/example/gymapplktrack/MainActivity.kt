@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Check
 import com.example.gymapplktrack.ui.theme.GymTrackTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -41,6 +42,8 @@ import android.net.Uri
 import android.content.Intent
 import com.example.gymapplktrack.ExerciseRepository
 import androidx.compose.ui.platform.LocalContext
+import android.content.Context
+import java.io.File
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -314,10 +317,18 @@ fun ExerciseItem(
             if (selected) {
                 Box(
                     modifier = Modifier
-                        .size(16.dp)
+                        .size(20.dp)
                         .background(MaterialTheme.colorScheme.primary)
-                        .align(Alignment.TopEnd)
-                )
+                        .align(Alignment.TopEnd),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(14.dp)
+                    )
+                }
             }
         }
     } else {
@@ -350,10 +361,18 @@ fun ExerciseItem(
             if (selected) {
                 Box(
                     modifier = Modifier
-                        .size(16.dp)
+                        .size(20.dp)
                         .background(MaterialTheme.colorScheme.primary)
-                        .align(Alignment.TopEnd)
-                )
+                        .align(Alignment.TopEnd),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(14.dp)
+                    )
+                }
             }
         }
     }
@@ -377,10 +396,28 @@ fun AddExerciseDialog(onDismiss: () -> Unit, onAdd: (String, Uri?) -> Unit) {
         imageUri = it
     }
 
+    fun saveImage(context: Context, uri: Uri): Uri? {
+        return try {
+            val input = context.contentResolver.openInputStream(uri) ?: return null
+            val file = File(context.filesDir, "img_${System.currentTimeMillis()}" )
+            file.outputStream().use { output ->
+                input.copyTo(output)
+            }
+            Uri.fromFile(file)
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
-            TextButton(onClick = { if (name.isNotBlank()) onAdd(name, imageUri) }) {
+            TextButton(onClick = {
+                if (name.isNotBlank()) {
+                    val storedUri = imageUri?.let { saveImage(context, it) }
+                    onAdd(name, storedUri)
+                }
+            }) {
                 Text(text = stringResource(id = R.string.add))
             }
         },
