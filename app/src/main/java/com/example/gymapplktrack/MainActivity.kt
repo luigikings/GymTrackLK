@@ -26,6 +26,8 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import com.example.gymapplktrack.ui.theme.GymTrackTheme
 import com.example.gymapplktrack.WeightProgressChart
+import com.example.gymapplktrack.Routine
+import com.example.gymapplktrack.RoutineRepository
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -63,16 +65,20 @@ class MainActivity : ComponentActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         window.statusBarColor = Color.BLACK
         val repository = ExerciseRepository(this)
+        val routineRepository = RoutineRepository(this)
         setContent {
             GymTrackTheme(darkTheme = true) {
-                GymTrackApp(repository)
+                GymTrackApp(repository, routineRepository)
             }
         }
     }
 }
 
 @Composable
-fun GymTrackApp(repository: ExerciseRepository) {
+fun GymTrackApp(
+    repository: ExerciseRepository,
+    routineRepository: RoutineRepository
+) {
     var selectedScreen by remember { mutableStateOf(Screen.Exercises) }
 
     Scaffold(
@@ -123,7 +129,7 @@ fun GymTrackApp(repository: ExerciseRepository) {
         ) {
             when (selectedScreen) {
                 Screen.Exercises -> ExercisesScreen(repository)
-                Screen.Routines -> RoutinesScreen()
+                Screen.Routines -> RoutinesScreen(repository, routineRepository)
                 Screen.Profile -> ProfileScreen()
             }
         }
@@ -146,8 +152,6 @@ fun ExercisesScreen(repository: ExerciseRepository) {
             val saved = repository.loadExercises()
             if (saved.isNotEmpty()) {
                 addAll(saved)
-            } else {
-                repeat(5) { add(Exercise(name = "Exercise ${it + 1}")) }
             }
         }
     }
@@ -294,13 +298,278 @@ fun ExercisesScreen(repository: ExerciseRepository) {
 }
 
 @Composable
-fun RoutinesScreen() {
-    Text(text = stringResource(id = R.string.routines))
+fun RoutinesScreen(
+    exerciseRepository: ExerciseRepository,
+    routineRepository: RoutineRepository
+) {
+    var showDialog by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var selectionMode by remember { mutableStateOf(false) }
+    var detailRoutine by remember { mutableStateOf<Routine?>(null) }
+    val selectedRoutines = remember { mutableStateListOf<Routine>() }
+    val routines = remember {
+        mutableStateListOf<Routine>().apply { addAll(routineRepository.loadRoutines()) }
+    }
+
+    detailRoutine?.let { routine ->
+        RoutineDetailScreen(
+            routine = routine,
+            exercises = exerciseRepository.loadExercises(),
+            onBack = {
+                detailRoutine = null
+                routineRepository.saveRoutines(routines)
+            },
+            onAddExercise = {
+                routine.exercises.add(it)
+                routineRepository.saveRoutines(routines)
+            },
+            onRemoveExercise = {
+                routine.exercises.remove(it)
+                routineRepository.saveRoutines(routines)
+            }
+        )
+        return
+    }
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        Box(modifier = Modifier.weight(1f)) {
+            LazyColumn(modifier = Modifier.fillMaxSize()) {
+                items(routines) { routine ->
+                    RoutineItem(
+                        routine,
+                        selected = routine in selectedRoutines,
+                        onClick = {
+                            if (selectionMode) {
+                                if (routine in selectedRoutines) selectedRoutines.remove(routine) else selectedRoutines.add(routine)
+                                selectionMode = selectedRoutines.isNotEmpty()
+                            } else {
+                                detailRoutine = routine
+                            }
+                        },
+                        onLongClick = {
+                            if (routine in selectedRoutines) selectedRoutines.remove(routine) else selectedRoutines.add(routine)
+                            selectionMode = selectedRoutines.isNotEmpty()
+                        }
+                    )
+                }
+            }
+
+            if (selectionMode) {
+                FloatingActionButton(
+                    onClick = { showDeleteDialog = true },
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(16.dp),
+                    containerColor = MaterialTheme.colorScheme.error
+                ) {
+                    Icon(imageVector = Icons.Default.Delete, contentDescription = null)
+                }
+            }
+        }
+
+        Button(
+            onClick = { showDialog = true },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) { Text(stringResource(id = R.string.create_routine)) }
+    }
+
+    if (showDialog) {
+        AddRoutineDialog(
+            onDismiss = { showDialog = false },
+            onAdd = { name ->
+                routines.add(Routine(name))
+                routineRepository.saveRoutines(routines)
+                showDialog = false
+            }
+        )
+    }
+
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    routines.removeAll(selectedRoutines)
+                    routineRepository.saveRoutines(routines)
+                    selectedRoutines.clear()
+                    selectionMode = false
+                    showDeleteDialog = false
+                }) { Text(stringResource(id = R.string.delete)) }
+            },
+            dismissButton = { TextButton(onClick = { showDeleteDialog = false }) { Text(stringResource(id = R.string.cancel)) } },
+            text = { Text(stringResource(id = R.string.delete_routines_question, selectedRoutines.size)) }
+        )
+    }
 }
 
 @Composable
 fun ProfileScreen() {
     Text(text = stringResource(id = R.string.profile))
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun RoutineItem(
+    routine: Routine,
+    selected: Boolean = false,
+    onClick: () -> Unit = {},
+    onLongClick: () -> Unit = {}
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
+            .padding(16.dp)
+    ) {
+        Text(text = routine.name, fontWeight = FontWeight.Bold, modifier = Modifier.align(Alignment.CenterStart))
+        if (selected) {
+            Box(
+                modifier = Modifier
+                    .size(20.dp)
+                    .background(MaterialTheme.colorScheme.primary)
+                    .align(Alignment.TopEnd),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.size(14.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun AddRoutineDialog(onDismiss: () -> Unit, onAdd: (String) -> Unit) {
+    var name by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = { if (name.isNotBlank()) onAdd(name) }) { Text(stringResource(id = R.string.add)) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(id = R.string.cancel)) } },
+        title = { Text(stringResource(id = R.string.routine_name)) },
+        text = {
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text(stringResource(id = R.string.routine_name)) }
+            )
+        }
+    )
+}
+
+@Composable
+fun RoutineDetailScreen(
+    routine: Routine,
+    exercises: List<Exercise>,
+    onBack: () -> Unit,
+    onAddExercise: (String) -> Unit,
+    onRemoveExercise: (String) -> Unit
+) {
+    var showAdd by remember { mutableStateOf(false) }
+    var deleteExercise by remember { mutableStateOf<String?>(null) }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(routine.name) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = null)
+                    }
+                }
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            LazyColumn(modifier = Modifier.weight(1f)) {
+                val routineExercises = exercises.filter { it.name in routine.exercises }
+                items(routineExercises) { ex ->
+                    ExerciseItem(
+                        exercise = ex,
+                        onLongClick = { deleteExercise = ex.name }
+                    )
+                }
+            }
+            Button(
+                onClick = { showAdd = true },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) { Text(stringResource(id = R.string.add_to_routine)) }
+        }
+    }
+
+    if (showAdd) {
+        AddExerciseToRoutineDialog(
+            exercises = exercises.filter { it.name !in routine.exercises },
+            onDismiss = { showAdd = false },
+            onAdd = {
+                onAddExercise(it)
+                showAdd = false
+            }
+        )
+    }
+
+    deleteExercise?.let { name ->
+        AlertDialog(
+            onDismissRequest = { deleteExercise = null },
+            confirmButton = {
+                TextButton(onClick = {
+                    onRemoveExercise(name)
+                    deleteExercise = null
+                }) { Text(stringResource(id = R.string.delete)) }
+            },
+            dismissButton = { TextButton(onClick = { deleteExercise = null }) { Text(stringResource(id = R.string.cancel)) } },
+            text = { Text(stringResource(id = R.string.delete_from_routine_question)) }
+        )
+    }
+}
+
+@Composable
+fun AddExerciseToRoutineDialog(
+    exercises: List<Exercise>,
+    onDismiss: () -> Unit,
+    onAdd: (String) -> Unit
+) {
+    var selected by remember { mutableStateOf<String?>(null) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = { selected?.let { onAdd(it) } }) { Text(stringResource(id = R.string.add)) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(id = R.string.cancel)) } },
+        title = { Text(stringResource(id = R.string.add_exercise)) },
+        text = {
+            if (exercises.isEmpty()) {
+                Text(stringResource(id = R.string.no_exercises_available))
+            } else {
+                LazyColumn {
+                    items(exercises) { ex ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { selected = ex.name }
+                                .background(if (selected == ex.name) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f) else Color.Transparent)
+                                .padding(8.dp)
+                        ) {
+                            Text(ex.name)
+                        }
+                    }
+                }
+            }
+        }
+    )
 }
 
 @OptIn(ExperimentalFoundationApi::class)

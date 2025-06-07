@@ -19,4 +19,10 @@
     <string name="record_history">Historial</string>
     <string name="weight_progression">Evoluci\u00f3n del peso</string>
     <string name="delete_record_question">\u00BFDeseas eliminar este record?</string>
+    <string name="create_routine">+ Crear Rutina</string>
+    <string name="routine_name">Nombre de la Rutina</string>
+    <string name="delete_routines_question">\u00BFDeseas eliminar %1$d rutinas?</string>
+    <string name="add_to_routine">Agregar ejercicio</string>
+    <string name="delete_from_routine_question">\u00BFDeseas eliminar este ejercicio de la rutina?</string>
+    <string name="no_exercises_available">No hay ejercicios disponibles</string>
 </resources>
