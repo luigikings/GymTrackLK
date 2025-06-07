@@ -465,6 +465,7 @@ fun AddRoutineDialog(onDismiss: () -> Unit, onAdd: (String) -> Unit) {
 }
 
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 fun RoutineDetailScreen(
     routine: Routine,
     exercises: List<Exercise>,
