@@ -11,4 +11,11 @@
     <string name="select_photo">Seleccionar foto</string>
     <string name="delete">Eliminar</string>
     <string name="delete_exercises_question">\u00BFDeseas eliminar %1$d ejercicios?</string>
+    <string name="place_record">Colocar Record</string>
+    <string name="weight">Peso</string>
+    <string name="reps">Repeticiones</string>
+    <string name="date">Fecha</string>
+    <string name="save">Guardar</string>
+    <string name="record_history">Historial</string>
+    <string name="delete_record_question">\u00BFDeseas eliminar este record?</string>
 </resources>

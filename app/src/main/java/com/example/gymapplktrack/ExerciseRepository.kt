@@ -14,17 +14,30 @@ class ExerciseRepository(context: Context) {
         return if (json != null) {
             val type = object : TypeToken<List<ExerciseDto>>() {}.type
             val dtos: List<ExerciseDto> = gson.fromJson(json, type)
-            dtos.map { Exercise(it.name, it.record, it.imageUri?.let { uri -> Uri.parse(uri) }) }.toMutableList()
+            dtos.map { dto ->
+                Exercise(
+                    dto.name,
+                    dto.records.map { ExerciseRecord(it.weight, it.reps, it.date) }.toMutableList(),
+                    dto.imageUri?.let { uri -> Uri.parse(uri) }
+                )
+            }.toMutableList()
         } else {
             mutableListOf()
         }
     }
 
     fun saveExercises(exercises: List<Exercise>) {
-        val dtos = exercises.map { ExerciseDto(it.name, it.record, it.imageUri?.toString()) }
+        val dtos = exercises.map { ex ->
+            ExerciseDto(
+                ex.name,
+                ex.records.map { ExerciseRecordDto(it.weight, it.reps, it.date) },
+                ex.imageUri?.toString()
+            )
+        }
         prefs.edit().putString("list", gson.toJson(dtos)).apply()
     }
 
-    private data class ExerciseDto(val name: String, val record: String, val imageUri: String?)
+    private data class ExerciseRecordDto(val weight: Int, val reps: Int, val date: String)
+    private data class ExerciseDto(val name: String, val records: List<ExerciseRecordDto>, val imageUri: String?)
 }
 
