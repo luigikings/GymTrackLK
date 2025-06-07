@@ -529,7 +529,7 @@ fun AddRecordDialog(onDismiss: () -> Unit, onSave: (Int, Int, String) -> Unit) {
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun ExerciseDetailScreen(
     exercise: Exercise,
