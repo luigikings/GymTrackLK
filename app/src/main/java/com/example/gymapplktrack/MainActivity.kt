@@ -36,6 +36,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import coil.compose.AsyncImage
 import android.net.Uri
@@ -273,6 +274,7 @@ fun ProfileScreen() {
     Text(text = stringResource(id = R.string.profile))
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ExerciseItem(
     exercise: Exercise,
