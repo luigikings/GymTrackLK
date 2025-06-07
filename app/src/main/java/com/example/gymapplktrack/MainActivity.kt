@@ -1,7 +1,8 @@
 package com.example.gymapplktrack
 
 import android.os.Bundle
-import android.graphics.Color
+import android.graphics.Color as AndroidColor
+import androidx.compose.ui.graphics.Color
 import androidx.core.view.WindowCompat
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -63,7 +64,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        window.statusBarColor = Color.BLACK
+        window.statusBarColor = AndroidColor.BLACK
         val repository = ExerciseRepository(this)
         val routineRepository = RoutineRepository(this)
         setContent {
