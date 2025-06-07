@@ -17,5 +17,6 @@
     <string name="date">Fecha</string>
     <string name="save">Guardar</string>
     <string name="record_history">Historial</string>
+    <string name="weight_progression">Evoluci\u00f3n del peso</string>
     <string name="delete_record_question">\u00BFDeseas eliminar este record?</string>
 </resources>
