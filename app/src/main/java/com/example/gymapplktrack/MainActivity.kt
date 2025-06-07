@@ -41,6 +41,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import coil.compose.AsyncImage
 import android.net.Uri
 import android.content.Intent
@@ -48,6 +49,12 @@ import com.example.gymapplktrack.ExerciseRepository
 import androidx.compose.ui.platform.LocalContext
 import android.content.Context
 import java.io.File
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.rememberDatePickerState
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -488,6 +495,8 @@ fun AddRecordDialog(onDismiss: () -> Unit, onSave: (Int, Int, String) -> Unit) {
     var weight by remember { mutableStateOf("") }
     var reps by remember { mutableStateOf("") }
     var date by remember { mutableStateOf("") }
+    var showDatePicker by remember { mutableStateOf(false) }
+    val datePickerState = rememberDatePickerState()
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -520,13 +529,38 @@ fun AddRecordDialog(onDismiss: () -> Unit, onSave: (Int, Int, String) -> Unit) {
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
                     value = date,
-                    onValueChange = { date = it },
+                    onValueChange = {},
+                    readOnly = true,
                     label = { Text(stringResource(id = R.string.date)) },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showDatePicker = true }
                 )
             }
         }
     )
+
+    if (showDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    val millis = datePickerState.selectedDateMillis
+                    if (millis != null) {
+                        val localDate = Instant.ofEpochMilli(millis)
+                            .atZone(ZoneId.systemDefault()).toLocalDate()
+                        date = localDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                    }
+                    showDatePicker = false
+                }) { Text(text = stringResource(id = R.string.save)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) { Text(text = stringResource(id = R.string.cancel)) }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -594,7 +628,7 @@ fun ExerciseDetailScreen(
                             .padding(vertical = 4.dp)
                             .combinedClickable(onClick = { showRecord = rec })
                     ) {
-                        Text(text = "${rec.weight} - ${rec.reps} - ${rec.date}")
+                        Text(text = "${rec.weight}kg, ${rec.reps}reps, ${rec.date}")
                         Spacer(modifier = Modifier.weight(1f))
                         IconButton(onClick = { deleteRecord = rec }) {
                             Icon(Icons.Default.Delete, contentDescription = null)
@@ -624,8 +658,8 @@ fun ExerciseDetailScreen(
             title = { Text(text = "Record") },
             text = {
                 Column {
-                    Text(text = "${rec.weight}")
-                    Text(text = "${rec.reps} repeticiones")
+                    Text(text = "${rec.weight}kg")
+                    Text(text = "${rec.reps} reps")
                     Text(text = rec.date)
                 }
             }
