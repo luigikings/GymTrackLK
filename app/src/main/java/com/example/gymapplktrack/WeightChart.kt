@@ -26,6 +26,7 @@ fun WeightProgressChart(records: List<ExerciseRecord>, modifier: Modifier = Modi
     val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
     val sorted = records.sortedBy { LocalDate.parse(it.date, formatter) }
     val maxWeight = sorted.maxOf { it.weight }.coerceAtLeast(1)
+    val primaryColor = MaterialTheme.colorScheme.primary
 
     Column(modifier = modifier) {
         androidx.compose.foundation.Canvas(
@@ -45,14 +46,14 @@ fun WeightProgressChart(records: List<ExerciseRecord>, modifier: Modifier = Modi
             }
             drawPath(
                 path = path,
-                color = MaterialTheme.colorScheme.primary,
+                color = primaryColor,
                 style = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
             )
             sorted.forEachIndexed { index, rec ->
                 val x = stepX * index
                 val y = height - rec.weight * scaleY
                 drawCircle(
-                    color = MaterialTheme.colorScheme.primary,
+                    color = primaryColor,
                     radius = 4.dp.toPx(),
                     center = Offset(x, y)
                 )
