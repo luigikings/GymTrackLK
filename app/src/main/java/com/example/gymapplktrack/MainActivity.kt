@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import com.example.gymapplktrack.ui.theme.GymTrackTheme
 import androidx.compose.runtime.Composable
@@ -129,6 +130,7 @@ fun ExercisesScreen(repository: ExerciseRepository) {
     var searchQuery by remember { mutableStateOf("") }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var selectionMode by remember { mutableStateOf(false) }
+    var detailExercise by remember { mutableStateOf<Exercise?>(null) }
     val selectedExercises = remember { mutableStateListOf<Exercise>() }
     val exercises = remember {
         mutableStateListOf<Exercise>().apply {
@@ -136,12 +138,25 @@ fun ExercisesScreen(repository: ExerciseRepository) {
             if (saved.isNotEmpty()) {
                 addAll(saved)
             } else {
-                repeat(5) { add(Exercise(name = "Exercise ${it + 1}", record = "X")) }
+                repeat(5) { add(Exercise(name = "Exercise ${it + 1}")) }
             }
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    if (detailExercise != null) {
+        ExerciseDetailScreen(
+            exercise = detailExercise!!,
+            onBack = { detailExercise = null; repository.saveExercises(exercises) },
+            onAddRecord = { record ->
+                detailExercise!!.records.add(record)
+                repository.saveExercises(exercises)
+            },
+            onDeleteRecord = { record ->
+                detailExercise!!.records.remove(record)
+                repository.saveExercises(exercises)
+            }
+        )
+    } else Column(modifier = Modifier.fillMaxSize()) {
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { searchQuery = it },
@@ -165,6 +180,8 @@ fun ExercisesScreen(repository: ExerciseRepository) {
                                 if (selectionMode) {
                                     if (exercise in selectedExercises) selectedExercises.remove(exercise) else selectedExercises.add(exercise)
                                     selectionMode = selectedExercises.isNotEmpty()
+                                } else {
+                                    detailExercise = exercise
                                 }
                             },
                             onLongClick = {
@@ -184,6 +201,8 @@ fun ExercisesScreen(repository: ExerciseRepository) {
                                 if (selectionMode) {
                                     if (exercise in selectedExercises) selectedExercises.remove(exercise) else selectedExercises.add(exercise)
                                     selectionMode = selectedExercises.isNotEmpty()
+                                } else {
+                                    detailExercise = exercise
                                 }
                             },
                             onLongClick = {
@@ -232,7 +251,7 @@ fun ExercisesScreen(repository: ExerciseRepository) {
         AddExerciseDialog(
             onDismiss = { showDialog = false },
             onAdd = { name, uri ->
-                exercises.add(Exercise(name = name, record = "X", imageUri = uri))
+                exercises.add(Exercise(name = name, imageUri = uri))
                 repository.saveExercises(exercises)
                 showDialog = false
             }
@@ -315,7 +334,10 @@ fun ExerciseItem(
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text(text = exercise.name, fontWeight = FontWeight.Bold)
-            Text(text = "Record: ${exercise.record}")
+            val top = exercise.records.maxByOrNull { it.weight }
+            if (top != null) {
+                Text(text = "Record: ${top.weight}")
+            }
             }
             if (selected) {
                 Box(
@@ -358,7 +380,10 @@ fun ExerciseItem(
             Spacer(modifier = Modifier.width(8.dp))
             Column {
                 Text(text = exercise.name, fontWeight = FontWeight.Bold)
-                Text(text = "Record: ${exercise.record}")
+                val top = exercise.records.maxByOrNull { it.weight }
+                if (top != null) {
+                    Text(text = "Record: ${top.weight}")
+                }
             }
             }
             if (selected) {
@@ -455,4 +480,169 @@ fun AddExerciseDialog(onDismiss: () -> Unit, onAdd: (String, Uri?) -> Unit) {
             }
         }
     )
+}
+
+@Composable
+fun AddRecordDialog(onDismiss: () -> Unit, onSave: (Int, Int, String) -> Unit) {
+    var weight by remember { mutableStateOf("") }
+    var reps by remember { mutableStateOf("") }
+    var date by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = {
+                val w = weight.toIntOrNull()
+                val r = reps.toIntOrNull()
+                if (w != null && r != null && date.isNotBlank()) {
+                    onSave(w, r, date)
+                }
+            }) { Text(text = stringResource(id = R.string.save)) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(text = stringResource(id = R.string.cancel)) } },
+        title = { Text(text = stringResource(id = R.string.place_record)) },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = weight,
+                    onValueChange = { weight = it },
+                    label = { Text(stringResource(id = R.string.weight)) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = reps,
+                    onValueChange = { reps = it },
+                    label = { Text(stringResource(id = R.string.reps)) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = date,
+                    onValueChange = { date = it },
+                    label = { Text(stringResource(id = R.string.date)) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+    )
+}
+
+@Composable
+fun ExerciseDetailScreen(
+    exercise: Exercise,
+    onBack: () -> Unit,
+    onAddRecord: (ExerciseRecord) -> Unit,
+    onDeleteRecord: (ExerciseRecord) -> Unit
+) {
+    var showAdd by remember { mutableStateOf(false) }
+    var showRecord by remember { mutableStateOf<ExerciseRecord?>(null) }
+    var deleteRecord by remember { mutableStateOf<ExerciseRecord?>(null) }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(exercise.name) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = null)
+                    }
+                }
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            if (exercise.imageUri != null) {
+                AsyncImage(
+                    model = exercise.imageUri,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Default.FitnessCenter,
+                    contentDescription = null,
+                    modifier = Modifier.size(200.dp)
+                )
+            }
+            val top = exercise.records.maxByOrNull { it.weight }
+            Spacer(modifier = Modifier.height(8.dp))
+            if (top != null) {
+                Text(text = "Record: ${top.weight}")
+                Text(text = "${top.reps} repeticiones", style = MaterialTheme.typography.bodySmall)
+                Text(text = top.date, style = MaterialTheme.typography.bodySmall)
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Button(onClick = { showAdd = true }) { Text(text = stringResource(id = R.string.place_record)) }
+            if (exercise.records.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(text = stringResource(id = R.string.record_history), fontWeight = FontWeight.Bold)
+                exercise.records.sortedByDescending { it.weight }.forEach { rec ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp)
+                            .combinedClickable(onClick = { showRecord = rec })
+                    ) {
+                        Text(text = "${rec.weight} - ${rec.reps} - ${rec.date}")
+                        Spacer(modifier = Modifier.weight(1f))
+                        IconButton(onClick = { deleteRecord = rec }) {
+                            Icon(Icons.Default.Delete, contentDescription = null)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (showAdd) {
+        AddRecordDialog(
+            onDismiss = { showAdd = false },
+            onSave = { w, r, d ->
+                onAddRecord(ExerciseRecord(w, r, d))
+                showAdd = false
+            }
+        )
+    }
+
+    showRecord?.let { rec ->
+        AlertDialog(
+            onDismissRequest = { showRecord = null },
+            confirmButton = {
+                TextButton(onClick = { showRecord = null }) { Text("OK") }
+            },
+            title = { Text(text = "Record") },
+            text = {
+                Column {
+                    Text(text = "${rec.weight}")
+                    Text(text = "${rec.reps} repeticiones")
+                    Text(text = rec.date)
+                }
+            }
+        )
+    }
+
+    deleteRecord?.let { rec ->
+        AlertDialog(
+            onDismissRequest = { deleteRecord = null },
+            confirmButton = {
+                TextButton(onClick = {
+                    onDeleteRecord(rec)
+                    deleteRecord = null
+                }) { Text(text = stringResource(id = R.string.delete)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { deleteRecord = null }) { Text(text = stringResource(id = R.string.cancel)) }
+            },
+            text = { Text(text = stringResource(id = R.string.delete_record_question)) }
+        )
+    }
 }
