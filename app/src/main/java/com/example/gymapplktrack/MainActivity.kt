@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import com.example.gymapplktrack.ui.theme.GymTrackTheme
+import com.example.gymapplktrack.WeightProgressChart
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -636,6 +637,9 @@ fun ExerciseDetailScreen(
                         }
                     }
                 }
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(text = stringResource(id = R.string.weight_progression), fontWeight = FontWeight.Bold)
+                WeightProgressChart(exercise.records, modifier = Modifier.padding(top = 8.dp))
             }
         }
     }
