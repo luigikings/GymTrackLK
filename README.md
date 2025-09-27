@@ -33,7 +33,7 @@ The goal is to make training smarter by storing data on your exercises, weights,
 ---
 
 ## 📸 Screenshots *(Coming Soon)*
-> Add app mockups or screenshots here once the UI is ready.
+
 
 ---
 
