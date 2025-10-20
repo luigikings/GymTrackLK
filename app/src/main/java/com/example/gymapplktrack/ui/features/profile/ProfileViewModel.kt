@@ -82,7 +82,7 @@ class ProfileViewModel(
         }
     }
 
-    fun ensureLog(date: LocalDate) {
+    fun ensureWorkoutLog(date: LocalDate) {
         viewModelScope.launch { repository.ensureWorkoutLog(date) }
     }
 
