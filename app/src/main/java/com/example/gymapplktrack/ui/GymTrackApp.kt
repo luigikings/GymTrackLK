@@ -254,9 +254,10 @@ fun GymTrackApp() {
                             navController.popBackStack(BottomDestination.Routines.route, inclusive = false)
                         },
                         onShare = { summary ->
+                            val shareText = "Entreno completado: ${summary.totalExercises} ejercicios, ${summary.totalSets} series"
                             val shareIntent = Intent(Intent.ACTION_SEND).apply {
                                 type = "text/plain"
-                                putExtra(Intent.EXTRA_TEXT, "Entreno completado: ${summary.totalExercises} ejercicios, ${summary.totalSets} series")
+                                putExtra(Intent.EXTRA_TEXT, shareText)
                             }
                             context.startActivity(Intent.createChooser(shareIntent, "Compartir resumen"))
                         },
