@@ -118,177 +118,179 @@ fun GymTrackApp() {
                     startDestination = BottomDestination.Exercises.route,
                     modifier = Modifier.padding(padding)
                 ) {
-            navigation(startDestination = ExerciseRoutes.LIST, route = BottomDestination.Exercises.route) {
-                composable(ExerciseRoutes.LIST) {
-                    val viewModel: ExercisesViewModel = viewModel(factory = ExercisesViewModel.provideFactory(container))
-                    val state by viewModel.uiState.collectAsStateWithLifecycle()
-                    ExercisesScreen(
-                        state = state,
-                        events = viewModel.events,
-                        onSearchChange = viewModel::onSearchChange,
-                        onSortChange = viewModel::onSortSelected,
-                        onCategoryChange = viewModel::onCategorySelected,
-                        onAddExercise = { navController.navigate(ExerciseRoutes.ADD) },
-                        onExerciseClick = { id -> navController.navigate("exercises/detail/$id") },
-                        onDeleteExercise = viewModel::deleteExercise
-                    )
-                }
-                composable(ExerciseRoutes.ADD) {
-                    val viewModel: ExercisesViewModel = viewModel(factory = ExercisesViewModel.provideFactory(container))
-                    AddExerciseScreen(
-                        onBack = { navController.popBackStack() },
-                        onSave = { name, category, image, notes ->
-                            viewModel.createExercise(name, category, image, notes)
-                            navController.popBackStack()
+                    navigation(startDestination = ExerciseRoutes.LIST, route = BottomDestination.Exercises.route) {
+                        composable(ExerciseRoutes.LIST) {
+                            val viewModel: ExercisesViewModel = viewModel(factory = ExercisesViewModel.provideFactory(container))
+                            val state by viewModel.uiState.collectAsStateWithLifecycle()
+                            ExercisesScreen(
+                                state = state,
+                                events = viewModel.events,
+                                onSearchChange = viewModel::onSearchChange,
+                                onSortChange = viewModel::onSortSelected,
+                                onCategoryChange = viewModel::onCategorySelected,
+                                onAddExercise = { navController.navigate(ExerciseRoutes.ADD) },
+                                onExerciseClick = { id -> navController.navigate("exercises/detail/$id") },
+                                onDeleteExercise = viewModel::deleteExercise
+                            )
                         }
-                    )
-                }
-                composable(
-                    route = ExerciseRoutes.DETAIL,
-                    arguments = listOf(navArgument("exerciseId") { type = NavType.LongType })
-                ) {
-                    val detailViewModel: ExerciseDetailViewModel = viewModel(factory = ExerciseDetailViewModel.provideFactory(container))
-                    val listViewModel: ExercisesViewModel = viewModel(factory = ExercisesViewModel.provideFactory(container))
-                    val state by detailViewModel.uiState.collectAsStateWithLifecycle()
-                    ExerciseDetailScreen(
-                        state = state,
-                        onBack = { navController.popBackStack() },
-                        onEdit = {},
-                        onDelete = listViewModel::deleteExercise,
-                        onChangeImage = listViewModel::updateImage,
-                        onUpdateNotes = listViewModel::updateNotes,
-                        onViewHistory = { navController.navigate("exercises/history/$it") },
-                        onUpdateDetails = { id, name, category, notes ->
-                            state.detail?.overview?.takeIf { it.id == id }?.let { overview ->
-                                listViewModel.updateExerciseDetails(overview, name, category, notes)
-                            }
+                        composable(ExerciseRoutes.ADD) {
+                            val viewModel: ExercisesViewModel = viewModel(factory = ExercisesViewModel.provideFactory(container))
+                            AddExerciseScreen(
+                                onBack = { navController.popBackStack() },
+                                onSave = { name, category, image, notes ->
+                                    viewModel.createExercise(name, category, image, notes)
+                                    navController.popBackStack()
+                                }
+                            )
                         }
-                    )
-                }
-                composable(
-                    route = ExerciseRoutes.HISTORY,
-                    arguments = listOf(navArgument("exerciseId") { type = NavType.LongType })
-                ) {
-                    val detailViewModel: ExerciseDetailViewModel = viewModel(factory = ExerciseDetailViewModel.provideFactory(container))
-                    val state by detailViewModel.uiState.collectAsStateWithLifecycle()
-                    ExerciseHistoryScreen(state = state, onBack = { navController.popBackStack() })
-                }
-            }
-            navigation(startDestination = RoutineRoutes.LIST, route = BottomDestination.Routines.route) {
-                composable(RoutineRoutes.LIST) {
-                    val routinesViewModel: RoutinesViewModel = viewModel(factory = RoutinesViewModel.provideFactory(container))
-                    val routinesState by routinesViewModel.uiState.collectAsStateWithLifecycle()
-                    val parentEntry = remember(navController) { navController.getBackStackEntry(BottomDestination.Routines.route) }
-                    val workoutViewModel: WorkoutViewModel = viewModel(parentEntry, factory = WorkoutViewModel.provideFactory(container))
-                    val workoutState by workoutViewModel.uiState.collectAsStateWithLifecycle()
-                    RoutinesScreen(
-                        state = routinesState,
-                        workoutState = workoutState,
-                        onCreateRoutine = { navController.navigate("routines/edit") },
-                        onStartRoutine = {
-                            workoutViewModel.startRoutine(it)
-                            navController.navigate(RoutineRoutes.WORKOUT)
-                        },
-                        onStartFree = {
-                            workoutViewModel.startRoutine(null)
-                            navController.navigate(RoutineRoutes.WORKOUT)
-                        },
-                        onEditRoutine = { id -> navController.navigate("routines/edit?routineId=$id") },
-                        onDeleteRoutine = routinesViewModel::deleteRoutine,
-                        onResumeWorkout = { navController.navigate(RoutineRoutes.WORKOUT) }
-                    )
-                }
-                composable(
-                    route = RoutineRoutes.EDIT,
-                    arguments = listOf(navArgument("routineId") {
-                        type = NavType.LongType
-                        defaultValue = -1
-                    })
-                ) {
-                    val editorViewModel: RoutineEditorViewModel = viewModel(factory = RoutineEditorViewModel.provideFactory(container))
-                    val editorState by editorViewModel.uiState.collectAsStateWithLifecycle()
-                    RoutineEditorScreen(
-                        state = editorState,
-                        events = editorViewModel.events,
-                        onBack = { navController.popBackStack() },
-                        onNameChange = editorViewModel::updateName,
-                        onAddExercise = editorViewModel::addExercise,
-                        onRemoveExercise = editorViewModel::removeExercise,
-                        onMoveExercise = editorViewModel::reorderExercise,
-                        onSave = editorViewModel::saveRoutine,
-                        onSaved = { navController.popBackStack() }
-                    )
-                }
-                composable(RoutineRoutes.WORKOUT) {
-                    val parentEntry = remember(navController) { navController.getBackStackEntry(BottomDestination.Routines.route) }
-                    val workoutViewModel: WorkoutViewModel = viewModel(parentEntry, factory = WorkoutViewModel.provideFactory(container))
-                    val workoutState by workoutViewModel.uiState.collectAsStateWithLifecycle()
-                    WorkoutScreen(
-                        state = workoutState,
-                        events = workoutViewModel.events,
-                        onBack = { navController.popBackStack() },
-                        onAddExercise = workoutViewModel::addExerciseToWorkout,
-                        onRemoveExercise = workoutViewModel::removeExercise,
-                        onAddSet = workoutViewModel::addSet,
-                        onRemoveSet = workoutViewModel::removeSet,
-                        onFinish = workoutViewModel::finishWorkout,
-                        onDiscard = {
-                            workoutViewModel.discardWorkout()
-                            navController.popBackStack()
-                        },
-                        onNotesChange = workoutViewModel::setNotes,
-                        onShowSummary = {
-                            navController.navigate(RoutineRoutes.SUMMARY)
+                        composable(
+                            route = ExerciseRoutes.DETAIL,
+                            arguments = listOf(navArgument("exerciseId") { type = NavType.LongType })
+                        ) {
+                            val detailViewModel: ExerciseDetailViewModel = viewModel(factory = ExerciseDetailViewModel.provideFactory(container))
+                            val listViewModel: ExercisesViewModel = viewModel(factory = ExercisesViewModel.provideFactory(container))
+                            val state by detailViewModel.uiState.collectAsStateWithLifecycle()
+                            ExerciseDetailScreen(
+                                state = state,
+                                onBack = { navController.popBackStack() },
+                                onEdit = {},
+                                onDelete = listViewModel::deleteExercise,
+                                onChangeImage = listViewModel::updateImage,
+                                onUpdateNotes = listViewModel::updateNotes,
+                                onViewHistory = { navController.navigate("exercises/history/$it") },
+                                onUpdateDetails = { id, name, category, notes ->
+                                    state.detail?.overview?.takeIf { it.id == id }?.let { overview ->
+                                        listViewModel.updateExerciseDetails(overview, name, category, notes)
+                                    }
+                                }
+                            )
                         }
-                    )
-                }
-                composable(RoutineRoutes.SUMMARY) {
-                    val parentEntry = remember(navController) { navController.getBackStackEntry(BottomDestination.Routines.route) }
-                    val workoutViewModel: WorkoutViewModel = viewModel(parentEntry, factory = WorkoutViewModel.provideFactory(container))
-                    val workoutState by workoutViewModel.uiState.collectAsStateWithLifecycle()
-                    WorkoutSummaryScreen(
-                        state = workoutState,
-                        events = workoutViewModel.events,
-                        onBack = {
-                            workoutViewModel.clearSummary()
-                            navController.popBackStack(BottomDestination.Routines.route, inclusive = false)
-                        },
-                        onShare = { summary ->
-                            val shareText = "Entreno completado: ${summary.totalExercises} ejercicios, ${summary.totalSets} series"
-                            val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                type = "text/plain"
-                                putExtra(Intent.EXTRA_TEXT, shareText)
-                            }
-                            context.startActivity(Intent.createChooser(shareIntent, "Compartir resumen"))
-                        },
-                        onSaveRoutine = workoutViewModel::saveCompletedWorkoutAsRoutine
-                    )
-                }
-            }
-            navigation(startDestination = ProfileRoutes.HOME, route = BottomDestination.Profile.route) {
-                composable(ProfileRoutes.HOME) {
-                    val profileViewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.provideFactory(container))
-                    val profileState by profileViewModel.uiState.collectAsStateWithLifecycle()
-                    ProfileScreen(
-                        state = profileState,
-                        onPreviousMonth = profileViewModel::previousMonth,
-                        onNextMonth = profileViewModel::nextMonth,
-                        onToggleCreatine = profileViewModel::toggleCreatine,
-                        onEnsureLog = profileViewModel::ensureWorkoutLog,
-                        onOpenPreferences = { navController.navigate(ProfileRoutes.PREFERENCES) }
-                    )
-                }
-                composable(ProfileRoutes.PREFERENCES) {
-                    val profileViewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.provideFactory(container))
-                    val profileState by profileViewModel.uiState.collectAsStateWithLifecycle()
-                    PreferencesScreen(
-                        state = profileState,
-                        onBack = { navController.popBackStack() },
-                        onThemeChange = profileViewModel::updateTheme,
-                        onUnitChange = profileViewModel::updateUnit,
-                        onStreakModeChange = profileViewModel::updateStreakMode,
-                        onCreatineReminderChange = profileViewModel::updateCreatineReminder
-                    )
+                        composable(
+                            route = ExerciseRoutes.HISTORY,
+                            arguments = listOf(navArgument("exerciseId") { type = NavType.LongType })
+                        ) {
+                            val detailViewModel: ExerciseDetailViewModel = viewModel(factory = ExerciseDetailViewModel.provideFactory(container))
+                            val state by detailViewModel.uiState.collectAsStateWithLifecycle()
+                            ExerciseHistoryScreen(state = state, onBack = { navController.popBackStack() })
+                        }
+                    }
+                    navigation(startDestination = RoutineRoutes.LIST, route = BottomDestination.Routines.route) {
+                        composable(RoutineRoutes.LIST) {
+                            val routinesViewModel: RoutinesViewModel = viewModel(factory = RoutinesViewModel.provideFactory(container))
+                            val routinesState by routinesViewModel.uiState.collectAsStateWithLifecycle()
+                            val parentEntry = remember(navController) { navController.getBackStackEntry(BottomDestination.Routines.route) }
+                            val workoutViewModel: WorkoutViewModel = viewModel(parentEntry, factory = WorkoutViewModel.provideFactory(container))
+                            val workoutState by workoutViewModel.uiState.collectAsStateWithLifecycle()
+                            RoutinesScreen(
+                                state = routinesState,
+                                workoutState = workoutState,
+                                onCreateRoutine = { navController.navigate("routines/edit") },
+                                onStartRoutine = {
+                                    workoutViewModel.startRoutine(it)
+                                    navController.navigate(RoutineRoutes.WORKOUT)
+                                },
+                                onStartFree = {
+                                    workoutViewModel.startRoutine(null)
+                                    navController.navigate(RoutineRoutes.WORKOUT)
+                                },
+                                onEditRoutine = { id -> navController.navigate("routines/edit?routineId=$id") },
+                                onDeleteRoutine = routinesViewModel::deleteRoutine,
+                                onResumeWorkout = { navController.navigate(RoutineRoutes.WORKOUT) }
+                            )
+                        }
+                        composable(
+                            route = RoutineRoutes.EDIT,
+                            arguments = listOf(navArgument("routineId") {
+                                type = NavType.LongType
+                                defaultValue = -1
+                            })
+                        ) {
+                            val editorViewModel: RoutineEditorViewModel = viewModel(factory = RoutineEditorViewModel.provideFactory(container))
+                            val editorState by editorViewModel.uiState.collectAsStateWithLifecycle()
+                            RoutineEditorScreen(
+                                state = editorState,
+                                events = editorViewModel.events,
+                                onBack = { navController.popBackStack() },
+                                onNameChange = editorViewModel::updateName,
+                                onAddExercise = editorViewModel::addExercise,
+                                onRemoveExercise = editorViewModel::removeExercise,
+                                onMoveExercise = editorViewModel::reorderExercise,
+                                onSave = editorViewModel::saveRoutine,
+                                onSaved = { navController.popBackStack() }
+                            )
+                        }
+                        composable(RoutineRoutes.WORKOUT) {
+                            val parentEntry = remember(navController) { navController.getBackStackEntry(BottomDestination.Routines.route) }
+                            val workoutViewModel: WorkoutViewModel = viewModel(parentEntry, factory = WorkoutViewModel.provideFactory(container))
+                            val workoutState by workoutViewModel.uiState.collectAsStateWithLifecycle()
+                            WorkoutScreen(
+                                state = workoutState,
+                                events = workoutViewModel.events,
+                                onBack = { navController.popBackStack() },
+                                onAddExercise = workoutViewModel::addExerciseToWorkout,
+                                onRemoveExercise = workoutViewModel::removeExercise,
+                                onAddSet = workoutViewModel::addSet,
+                                onRemoveSet = workoutViewModel::removeSet,
+                                onFinish = workoutViewModel::finishWorkout,
+                                onDiscard = {
+                                    workoutViewModel.discardWorkout()
+                                    navController.popBackStack()
+                                },
+                                onNotesChange = workoutViewModel::setNotes,
+                                onShowSummary = {
+                                    navController.navigate(RoutineRoutes.SUMMARY)
+                                }
+                            )
+                        }
+                        composable(RoutineRoutes.SUMMARY) {
+                            val parentEntry = remember(navController) { navController.getBackStackEntry(BottomDestination.Routines.route) }
+                            val workoutViewModel: WorkoutViewModel = viewModel(parentEntry, factory = WorkoutViewModel.provideFactory(container))
+                            val workoutState by workoutViewModel.uiState.collectAsStateWithLifecycle()
+                            WorkoutSummaryScreen(
+                                state = workoutState,
+                                events = workoutViewModel.events,
+                                onBack = {
+                                    workoutViewModel.clearSummary()
+                                    navController.popBackStack(BottomDestination.Routines.route, inclusive = false)
+                                },
+                                onShare = { summary ->
+                                    val shareText = "Entreno completado: ${summary.totalExercises} ejercicios, ${summary.totalSets} series"
+                                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                        type = "text/plain"
+                                        putExtra(Intent.EXTRA_TEXT, shareText)
+                                    }
+                                    context.startActivity(Intent.createChooser(shareIntent, "Compartir resumen"))
+                                },
+                                onSaveRoutine = workoutViewModel::saveCompletedWorkoutAsRoutine
+                            )
+                        }
+                    }
+                    navigation(startDestination = ProfileRoutes.HOME, route = BottomDestination.Profile.route) {
+                        composable(ProfileRoutes.HOME) {
+                            val profileViewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.provideFactory(container))
+                            val profileState by profileViewModel.uiState.collectAsStateWithLifecycle()
+                            ProfileScreen(
+                                state = profileState,
+                                onPreviousMonth = profileViewModel::previousMonth,
+                                onNextMonth = profileViewModel::nextMonth,
+                                onToggleCreatine = profileViewModel::toggleCreatine,
+                                onEnsureLog = profileViewModel::ensureWorkoutLog,
+                                onOpenPreferences = { navController.navigate(ProfileRoutes.PREFERENCES) }
+                            )
+                        }
+                        composable(ProfileRoutes.PREFERENCES) {
+                            val profileViewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.provideFactory(container))
+                            val profileState by profileViewModel.uiState.collectAsStateWithLifecycle()
+                            PreferencesScreen(
+                                state = profileState,
+                                onBack = { navController.popBackStack() },
+                                onThemeChange = profileViewModel::updateTheme,
+                                onUnitChange = profileViewModel::updateUnit,
+                                onStreakModeChange = profileViewModel::updateStreakMode,
+                                onCreatineReminderChange = profileViewModel::updateCreatineReminder
+                            )
+                        }
+                    }
                 }
             }
         }
