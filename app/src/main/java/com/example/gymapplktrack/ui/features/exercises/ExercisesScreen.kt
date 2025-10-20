@@ -83,9 +83,14 @@ fun ExercisesScreen(
     }
 
     Scaffold(
+        containerColor = Color.Transparent,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
-            FloatingActionButton(onClick = onAddExercise, containerColor = MaterialTheme.colorScheme.primary) {
+            FloatingActionButton(
+                onClick = onAddExercise,
+                containerColor = MaterialTheme.colorScheme.secondary,
+                contentColor = MaterialTheme.colorScheme.onSecondary
+            ) {
                 Icon(Icons.Default.Add, contentDescription = "Agregar ejercicio")
             }
         }
@@ -97,9 +102,9 @@ fun ExercisesScreen(
                 .padding(16.dp)
         ) {
             Text(
-                text = "Ejercicios",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
+                text = "Explota tus ejercicios",
+                style = MaterialTheme.typography.displaySmall,
+                fontWeight = FontWeight.Black
             )
             Spacer(modifier = Modifier.height(12.dp))
             OutlinedTextField(
@@ -199,15 +204,16 @@ private fun CategoryFilter(categories: List<String>, selected: String?, onChange
 private fun ExerciseListItem(exercise: ExerciseOverview, onClick: () -> Unit, onDelete: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
         onClick = onClick
     ) {
         Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             ExerciseImage(imageUri = exercise.imageUri)
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = exercise.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text(text = exercise.name.uppercase(), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 exercise.personalRecord?.let { record ->
                     Text(
                         text = "Record: ${record.bestWeightKg} kg × ${record.bestReps}",
@@ -220,7 +226,7 @@ private fun ExerciseListItem(exercise: ExerciseOverview, onClick: () -> Unit, on
                     color = MaterialTheme.colorScheme.primary
                 )
             }
-            TextButton(onClick = onDelete) { Text("Eliminar") }
+            TextButton(onClick = onDelete) { Text("Eliminar", color = MaterialTheme.colorScheme.secondary) }
         }
     }
 }

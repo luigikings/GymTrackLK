@@ -1,6 +1,8 @@
 package com.example.gymapplktrack.ui
 
 import android.content.Intent
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
@@ -9,13 +11,17 @@ import androidx.compose.material.icons.filled.ListAlt
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.material3.Surface
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -28,8 +34,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.gymapplktrack.LocalAppContainer
 import com.example.gymapplktrack.domain.model.ExerciseSort
-import com.example.gymapplktrack.domain.model.ThemePreference
-import com.example.gymapplktrack.domain.model.WeightUnit
+import com.example.gymapplktrack.ui.theme.gymGradientBackground
 import com.example.gymapplktrack.ui.features.exercises.AddExerciseScreen
 import com.example.gymapplktrack.ui.features.exercises.ExerciseDetailScreen
 import com.example.gymapplktrack.ui.features.exercises.ExerciseDetailViewModel
@@ -64,42 +69,55 @@ fun GymTrackApp() {
         BottomDestination.Profile
     )
 
-    Scaffold(
-        bottomBar = {
-            NavigationBar {
-                bottomDestinations.forEach { destination ->
-                    val selected = backStackEntry?.destination?.hierarchy?.any { it.route == destination.route } == true
-                    val icon = when (destination) {
-                        BottomDestination.Exercises -> Icons.Filled.FitnessCenter
-                        BottomDestination.Routines -> Icons.Filled.ListAlt
-                        BottomDestination.Profile -> Icons.Filled.AccountCircle
-                    }
-                    val label = when (destination) {
-                        BottomDestination.Exercises -> "Ejercicios"
-                        BottomDestination.Routines -> "Rutinas"
-                        BottomDestination.Profile -> "Perfil"
-                    }
-                    NavigationBarItem(
-                        selected = selected,
-                        onClick = {
-                            navController.navigate(destination.route) {
-                                popUpTo(navController.graph.startDestinationId) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
+    Surface(color = Color.Transparent) {
+        Box(modifier = Modifier.fillMaxSize().gymGradientBackground()) {
+            Scaffold(
+                containerColor = Color.Transparent,
+                contentColor = MaterialTheme.colorScheme.onBackground,
+                bottomBar = {
+                    NavigationBar(
+                        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
+                    ) {
+                        bottomDestinations.forEach { destination ->
+                            val selected = backStackEntry?.destination?.hierarchy?.any { it.route == destination.route } == true
+                            val icon = when (destination) {
+                                BottomDestination.Exercises -> Icons.Filled.FitnessCenter
+                                BottomDestination.Routines -> Icons.Filled.ListAlt
+                                BottomDestination.Profile -> Icons.Filled.AccountCircle
                             }
-                        },
-                        icon = { Icon(icon, contentDescription = label) },
-                        label = { Text(label) }
-                    )
+                            val label = when (destination) {
+                                BottomDestination.Exercises -> "Ejercicios"
+                                BottomDestination.Routines -> "Rutinas"
+                                BottomDestination.Profile -> "Perfil"
+                            }
+                            NavigationBarItem(
+                                selected = selected,
+                                onClick = {
+                                    navController.navigate(destination.route) {
+                                        popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                },
+                                icon = { Icon(icon, contentDescription = label) },
+                                label = { Text(label) },
+                                colors = NavigationBarItemDefaults.colors(
+                                    selectedIconColor = MaterialTheme.colorScheme.primary,
+                                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                                    indicatorColor = MaterialTheme.colorScheme.surfaceVariant,
+                                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            )
+                        }
+                    }
                 }
-            }
-        }
-    ) { padding ->
-        NavHost(
-            navController = navController,
-            startDestination = BottomDestination.Exercises.route,
-            modifier = Modifier.padding(padding)
-        ) {
+            ) { padding ->
+                NavHost(
+                    navController = navController,
+                    startDestination = BottomDestination.Exercises.route,
+                    modifier = Modifier.padding(padding)
+                ) {
             navigation(startDestination = ExerciseRoutes.LIST, route = BottomDestination.Exercises.route) {
                 composable(ExerciseRoutes.LIST) {
                     val viewModel: ExercisesViewModel = viewModel(factory = ExercisesViewModel.provideFactory(container))
@@ -191,15 +209,14 @@ fun GymTrackApp() {
                     val editorState by editorViewModel.uiState.collectAsStateWithLifecycle()
                     RoutineEditorScreen(
                         state = editorState,
+                        events = editorViewModel.events,
                         onBack = { navController.popBackStack() },
                         onNameChange = editorViewModel::updateName,
                         onAddExercise = editorViewModel::addExercise,
                         onRemoveExercise = editorViewModel::removeExercise,
                         onMoveExercise = editorViewModel::reorderExercise,
-                        onSave = {
-                            editorViewModel.saveRoutine()
-                            navController.popBackStack()
-                        }
+                        onSave = editorViewModel::saveRoutine,
+                        onSaved = { navController.popBackStack() }
                     )
                 }
                 composable(RoutineRoutes.WORKOUT) {
@@ -213,7 +230,7 @@ fun GymTrackApp() {
                         onAddExercise = workoutViewModel::addExerciseToWorkout,
                         onRemoveExercise = workoutViewModel::removeExercise,
                         onAddSet = workoutViewModel::addSet,
-                        onRemoveSet = workoutViewModel::removeLastSet,
+                        onRemoveSet = workoutViewModel::removeSet,
                         onFinish = workoutViewModel::finishWorkout,
                         onDiscard = {
                             workoutViewModel.discardWorkout()
@@ -231,6 +248,7 @@ fun GymTrackApp() {
                     val workoutState by workoutViewModel.uiState.collectAsStateWithLifecycle()
                     WorkoutSummaryScreen(
                         state = workoutState,
+                        events = workoutViewModel.events,
                         onBack = {
                             workoutViewModel.clearSummary()
                             navController.popBackStack(BottomDestination.Routines.route, inclusive = false)
@@ -241,7 +259,8 @@ fun GymTrackApp() {
                                 putExtra(Intent.EXTRA_TEXT, "Entreno completado: ${summary.totalExercises} ejercicios, ${summary.totalSets} series")
                             }
                             context.startActivity(Intent.createChooser(shareIntent, "Compartir resumen"))
-                        }
+                        },
+                        onSaveRoutine = workoutViewModel::saveCompletedWorkoutAsRoutine
                     )
                 }
             }
