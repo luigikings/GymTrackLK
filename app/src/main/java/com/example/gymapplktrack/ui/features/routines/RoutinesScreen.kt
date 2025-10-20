@@ -13,15 +13,16 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,16 +45,26 @@ fun RoutinesScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(horizontal = 16.dp, vertical = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
-        Text("Rutinas", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+        Text("Tus rituales", style = MaterialTheme.typography.displaySmall)
         if (workoutState.workout != null) {
-            ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Surface(
+                tonalElevation = 8.dp,
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     Text("Entreno en progreso", style = MaterialTheme.typography.titleMedium)
-                    Text("Ejercicios activos: ${workoutState.workout.exercises.size}")
-                    Button(onClick = onResumeWorkout) { Text("Continuar") }
+                    Text(
+                        "Ejercicios activos: ${workoutState.workout.exercises.size}",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Button(onClick = onResumeWorkout) { Text("Retomar intensidad") }
                 }
             }
         }
@@ -64,15 +75,15 @@ fun RoutinesScreen(
                 Button(onClick = onCreateRoutine) {
                     Icon(Icons.Default.Add, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Crear rutina")
+                    Text("Nueva rutina")
                 }
                 OutlinedButton(onClick = onStartFree) {
-                    Icon(Icons.Default.PlayArrow, contentDescription = null)
+                    Icon(Icons.Default.FlashOn, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Entreno libre")
                 }
             }
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 items(state.routines, key = { it.id }) { routine ->
                     RoutineCard(
                         routine = routine,
@@ -90,15 +101,20 @@ fun RoutinesScreen(
 private fun RoutineCard(routine: RoutineOverview, onStart: () -> Unit, onEdit: () -> Unit, onDelete: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(routine.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            Text("${routine.exercises.size} ejercicios")
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = onStart) { Text("Iniciar") }
+        Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(routine.name.uppercase(), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text(
+                "${routine.exercises.size} ejercicios asignados",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Button(onClick = onStart) { Text("Ejecutar") }
                 OutlinedButton(onClick = onEdit) { Text("Editar") }
-                OutlinedButton(onClick = onDelete) { Text("Eliminar") }
+                TextButton(onClick = onDelete) { Text("Borrar") }
             }
         }
     }
@@ -113,9 +129,9 @@ private fun EmptyRoutineState(onCreateRoutine: () -> Unit, onStartFree: () -> Un
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("No tienes rutinas aún", style = MaterialTheme.typography.titleMedium)
+        Text("Sin rituales todavía", style = MaterialTheme.typography.titleMedium)
         Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = onCreateRoutine) { Text("Crear rutina") }
+        Button(onClick = onCreateRoutine) { Text("Crear tu primera rutina") }
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedButton(onClick = onStartFree) { Text("Entreno libre") }
     }

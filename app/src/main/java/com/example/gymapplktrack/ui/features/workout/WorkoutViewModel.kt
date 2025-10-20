@@ -26,6 +26,7 @@ class WorkoutViewModel(private val repository: GymRepository) : ViewModel() {
     private val draft = MutableStateFlow<WorkoutInProgress?>(null)
     private val notes = MutableStateFlow("")
     private val lastSummary = MutableStateFlow<WorkoutSummary?>(null)
+    private val lastCompletedWorkout = MutableStateFlow<WorkoutInProgress?>(null)
     private val _events = MutableSharedFlow<WorkoutEvent>()
     val events = _events
 
@@ -37,15 +38,20 @@ class WorkoutViewModel(private val repository: GymRepository) : ViewModel() {
         persistedWorkoutFlow,
         draft,
         notes,
-        lastSummary
-    ) { available, persisted, currentDraft, note, summary ->
+        lastSummary,
+        lastCompletedWorkout
+    ) { available, persisted, currentDraft, note, summary, completed ->
         val active = currentDraft ?: persisted
+        val canSaveRoutine = completed?.routineId == null &&
+            (completed?.exercises?.any { it.sets.isNotEmpty() } == true)
         WorkoutUiState(
             availableExercises = available,
             workout = active,
             notes = note,
             hasSavedWorkout = persisted != null && currentDraft == null,
-            lastSummary = summary
+            lastSummary = summary,
+            completedWorkout = completed,
+            canSaveCompletedWorkout = canSaveRoutine
         )
     }.stateIn(
         scope = viewModelScope,
@@ -136,13 +142,15 @@ class WorkoutViewModel(private val repository: GymRepository) : ViewModel() {
         }
     }
 
-    fun removeLastSet(exerciseId: Long) {
+    fun removeSet(exerciseId: Long, index: Int) {
         viewModelScope.launch {
             val current = draft.value ?: return@launch
             val updated = current.copy(
                 exercises = current.exercises.map { exercise ->
-                    if (exercise.exerciseId == exerciseId && exercise.sets.isNotEmpty()) {
-                        exercise.copy(sets = exercise.sets.dropLast(1))
+                    if (exercise.exerciseId == exerciseId && index in exercise.sets.indices) {
+                        val mutableSets = exercise.sets.toMutableList()
+                        mutableSets.removeAt(index)
+                        exercise.copy(sets = mutableSets)
                     } else {
                         exercise
                     }
@@ -167,6 +175,7 @@ class WorkoutViewModel(private val repository: GymRepository) : ViewModel() {
             draft.value = null
             notes.value = ""
             lastSummary.value = summary
+            lastCompletedWorkout.value = current
             _events.emit(WorkoutEvent.Completed(summary))
         }
     }
@@ -181,6 +190,32 @@ class WorkoutViewModel(private val repository: GymRepository) : ViewModel() {
 
     fun clearSummary() {
         lastSummary.value = null
+        lastCompletedWorkout.value = null
+    }
+
+    fun saveCompletedWorkoutAsRoutine(name: String) {
+        viewModelScope.launch {
+            val completed = lastCompletedWorkout.value ?: run {
+                _events.emit(WorkoutEvent.Error("No hay un entreno listo para guardar"))
+                return@launch
+            }
+            val routineName = name.trim()
+            if (routineName.isBlank()) {
+                _events.emit(WorkoutEvent.Error("Necesitas un nombre para la rutina"))
+                return@launch
+            }
+            val exerciseOrder = completed.exercises
+                .filter { it.sets.isNotEmpty() }
+                .map { it.exerciseId }
+                .distinct()
+            if (exerciseOrder.isEmpty()) {
+                _events.emit(WorkoutEvent.Error("No hay series registradas para guardar"))
+                return@launch
+            }
+            val routineId = repository.upsertRoutine(null, routineName, exerciseOrder)
+            _events.emit(WorkoutEvent.RoutineSaved(routineName, routineId))
+            lastCompletedWorkout.value = completed.copy(routineId = routineId)
+        }
     }
 
     companion object {
@@ -195,10 +230,13 @@ data class WorkoutUiState(
     val workout: WorkoutInProgress? = null,
     val notes: String = "",
     val hasSavedWorkout: Boolean = false,
-    val lastSummary: WorkoutSummary? = null
+    val lastSummary: WorkoutSummary? = null,
+    val completedWorkout: WorkoutInProgress? = null,
+    val canSaveCompletedWorkout: Boolean = false
 )
 
 sealed class WorkoutEvent {
     data class Completed(val summary: WorkoutSummary) : WorkoutEvent()
+    data class RoutineSaved(val name: String, val routineId: Long) : WorkoutEvent()
     data class Error(val message: String) : WorkoutEvent()
 }
