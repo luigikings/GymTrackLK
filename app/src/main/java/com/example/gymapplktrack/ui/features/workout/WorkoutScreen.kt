@@ -1,8 +1,8 @@
 package com.example.gymapplktrack.ui.features.workout
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -55,7 +55,7 @@ import com.example.gymapplktrack.domain.model.ExerciseOverview
 import com.example.gymapplktrack.domain.model.WorkoutExercise
 import kotlinx.coroutines.flow.Flow
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WorkoutScreen(
     state: WorkoutUiState,
@@ -209,7 +209,7 @@ private fun ActiveWorkoutHeader(state: WorkoutUiState) {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun AddExerciseSection(
     available: List<ExerciseOverview>,
