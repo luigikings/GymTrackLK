@@ -1,5 +1,6 @@
 package com.example.gymapplktrack.ui.features.workout
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -245,6 +246,7 @@ private fun AddExerciseSection(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun WorkoutExerciseCard(
     exercise: WorkoutExercise,
