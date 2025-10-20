@@ -1,5 +1,6 @@
 package com.example.gymapplktrack.ui.features.workout
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -14,7 +15,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.animateItemPlacement
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -296,7 +296,7 @@ private fun WorkoutExerciseCard(
                             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f),
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .animateItemPlacement()
+                                .animateContentSize()
                         ) {
                             Row(
                                 modifier = Modifier
