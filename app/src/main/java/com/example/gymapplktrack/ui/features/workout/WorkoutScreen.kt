@@ -247,7 +247,6 @@ private fun AddExerciseSection(
 }
 
 @OptIn(ExperimentalFoundationApi::class)
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun WorkoutExerciseCard(
     exercise: WorkoutExercise,
