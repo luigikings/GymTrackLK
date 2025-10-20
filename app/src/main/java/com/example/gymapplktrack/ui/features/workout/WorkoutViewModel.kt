@@ -33,6 +33,7 @@ class WorkoutViewModel(private val repository: GymRepository) : ViewModel() {
     private val availableExercisesFlow = repository.observeExercises()
     private val persistedWorkoutFlow = repository.observeActiveWorkout()
 
+    @Suppress("UNCHECKED_CAST")
     val uiState: StateFlow<WorkoutUiState> = combine(
         availableExercisesFlow,
         persistedWorkoutFlow,
@@ -40,7 +41,14 @@ class WorkoutViewModel(private val repository: GymRepository) : ViewModel() {
         notes,
         lastSummary,
         lastCompletedWorkout
-    ) { available, persisted, currentDraft, note, summary, completed ->
+    ) { values ->
+        val available = values[0] as List<ExerciseOverview>
+        val persisted = values[1] as WorkoutInProgress?
+        val currentDraft = values[2] as WorkoutInProgress?
+        val note = values[3] as String
+        val summary = values[4] as WorkoutSummary?
+        val completed = values[5] as WorkoutInProgress?
+
         val active = currentDraft ?: persisted
         val canSaveRoutine = completed?.routineId == null &&
             (completed?.exercises?.any { it.sets.isNotEmpty() } == true)
