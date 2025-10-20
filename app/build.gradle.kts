@@ -58,6 +58,7 @@ dependencies {
     implementation(libs.lifecycle.viewmodel.savedstate)
     implementation(libs.activity.compose)
     implementation(libs.compose.ui)
+    implementation(libs.compose.ui.text)
     implementation(libs.compose.foundation)
     implementation(libs.compose.material3)
     implementation(libs.material)
