@@ -1,53 +1,42 @@
-# 🏋️ GymTracker – Your Personal Workout Companion  
+# GymTrackLK
 
-## 📌 Overview
-**GymTracker** is a mobile application built with **Kotlin** designed to help users track their workouts and optimize progress at the gym.  
-The goal is to make training smarter by storing data on your exercises, weights, and repetitions — and in the future, providing recommendations to maximize performance.  
+Aplicación Android desarrollada en **Kotlin** con **Jetpack Compose** que ayuda a registrar entrenamientos de fuerza, gestionar rutinas y seguir hábitos diarios incluso sin conexión. El proyecto sigue una arquitectura **MVVM + Repository**, persiste datos localmente con **Room** y aprovecha **Coroutines/Flow** para la gestión reactiva de estados.
 
----
+## Características principales
+- Navegación inferior con tres secciones: **Ejercicios**, **Rutinas** y **Perfil**.
+- Gestión completa de ejercicios con búsqueda, filtros por categoría, notas, imágenes desde galería y cálculo automático de récords personales.
+- Rutinas personalizables con orden configurable y flujo de entreno activo que guarda el estado para reanudar más tarde.
+- Registro diario de entrenamientos y consumo de creatina, calendario de actividad y cálculo de rachas por días o semanas.
+- Exportación/Importación de respaldo en JSON para operar offline-first.
+- Temas claro/oscuro/sistema, preferencia de unidades (kg/lb) y recordatorio configurable de creatina.
+- Implementación de accesibilidad básica mediante `contentDescription` e interfaces con tamaños táctiles cómodos.
 
-## ✨ Features
-- 📊 **Workout Tracking**: log exercises, weights, sets, and repetitions.  
-- 🔄 **Progress History**: view your performance over time with detailed stats.  
-- 🧠 **Smart Suggestions (Coming Soon)**: AI-powered recommendations on which exercises, reps, and weights to perform.  
-- 🏷️ **Custom Exercises**: add your own routines and tailor workouts to your needs.  
-- 📱 **Simple & Clean UI**: designed for ease of use while training.  
+## Arquitectura
+- **Presentación:** Jetpack Compose + ViewModels por feature.
+- **Datos:** Room (DAO + TypeConverters) y DataStore para preferencias.
+- **Dominio:** Utilidades para PR, rachas y calendarios.
+- **Imágenes:** Coil para cargar y actualizar fotos de ejercicios mediante Storage Access Framework.
 
----
+## Estructura de navegación
+- **Ejercicios:** lista, creación, detalle con calendario y acceso a historial de series.
+- **Rutinas:** listado, editor y flujo de entreno con pantalla de felicitación cuando se completa la sesión.
+- **Perfil:** calendario mensual, racha actual, hábitos de creatina, estadísticas y preferencias.
 
-## 🛠️ Tech Stack
-- **Language**: [Kotlin](https://kotlinlang.org/)  
-- **Architecture**: MVVM (Model–View–ViewModel) *(planned)*  
-- **Database**: Room (for local storage of workouts and progress)  
-- **UI**: Android Jetpack Compose *(future integration)*  
+## Cómo compilar y ejecutar
+1. Instala las dependencias con Android Studio Iguana o superior.
+2. Sincroniza el proyecto (`Sync Project with Gradle Files`).
+3. Compila o ejecuta en un dispositivo/emulador con Android 7.1 (API 25) o superior.
+4. Las semillas de datos (ejercicios base y una rutina ejemplo) se cargan automáticamente en builds **debug**.
 
----
+## Pruebas
+- **Unitarias:** se encuentran en `app/src/test/...` y cubren comparador de récords, cálculo de rachas y marcado de calendario.
+- **Instrumentadas:** `WorkoutFlowInstrumentedTest` valida el cierre de entrenos, creación de sesiones y actualización de récords en una base en memoria.
 
-## 🚀 Roadmap
-- [x] Basic workout logging (exercise, sets, reps, weight)  
-- [ ] History and statistics dashboard  
-- [ ] AI-based workout recommendations  
-- [ ] User profiles and cloud sync  
-- [ ] Export data (CSV, PDF)  
+Ejecuta las pruebas desde Android Studio o con Gradle:
+```bash
+./gradlew testDebug
+./gradlew connectedDebugAndroidTest
+```
 
----
-
-## 📸 Screenshots *(Coming Soon)*
-
-
----
-
-## 🤝 Contributing
-Contributions, issues, and feature requests are welcome!  
-Feel free to **fork** the repo and submit a pull request.  
-
----
-
-## 📬 Contact
-👤 **Luis Ángel Jose Da Silva**  
-🌐 [GitHub](https://github.com/luigikings)  
-🎥 [YouTube](https://www.youtube.com/) *(Rocket League & Tech content)*  
-
----
-
-⭐ If you like this project, consider giving it a **star** to support development!
+## Licencia
+Proyecto creado para fines demostrativos. Si deseas reutilizarlo, menciona la fuente.
